@@ -36,9 +36,9 @@ const authLimiter = rateLimit({
   },
 });
 
-// CORS configuration - Allow all origins
+// CORS configuration
 const corsOptions = {
-  origin: true,
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
   credentials: true,
   optionsSuccessStatus: 200
 };
