@@ -1,5 +1,6 @@
 import User from "../models/User.js";
 import Post from "../models/Post.js";
+import Comment from "../models/Comments.js";
 import Categories from "../models/Categories.js";
 import cloudinary from "../config/cloudinary.js";
 
@@ -72,7 +73,7 @@ export const getPosts = async (req, res) => {
 
     // Build query object
     let query = {};
-    
+
     // Only add status filter if it's not empty (empty means get all)
     if (status && status !== '') {
       query.status = status;
@@ -111,10 +112,30 @@ export const getPosts = async (req, res) => {
     const total = await Post.countDocuments(query);
     const totalPages = Math.ceil(total / limit);
 
+    // Get comment counts for all posts
+    const postIds = posts.map(post => post._id);
+    const commentCounts = await Comment.aggregate([
+      { $match: { post: { $in: postIds } } },
+      { $group: { _id: '$post', count: { $sum: 1 } } }
+    ]);
+
+    // Create a map for quick lookup
+    const commentCountMap = {};
+    commentCounts.forEach(item => {
+      commentCountMap[item._id.toString()] = item.count;
+    });
+
+    // Add comment count to each post
+    const postsWithComments = posts.map(post => {
+      const postObj = post.toObject();
+      postObj.commentCount = commentCountMap[post._id.toString()] || 0;
+      return postObj;
+    });
+
     // Build response
     res.status(200).json({
       success: true,
-      posts,
+      posts: postsWithComments,
       pagination: {
         currentPage: parseInt(page),
         totalPages,
@@ -369,7 +390,7 @@ export const getTrendingPosts = async (req, res) => {
     // Calculate date range for trending
     let dateFilter = {};
     const now = new Date();
-    
+
     if (timeFrame === 'day') {
       dateFilter = { createdAt: { $gte: new Date(now - 24 * 60 * 60 * 1000) } };
     } else if (timeFrame === 'week') {
@@ -381,7 +402,7 @@ export const getTrendingPosts = async (req, res) => {
     const posts = await Post.find({ status: 'published', ...dateFilter })
       .populate('author', 'username profilePic')
       .populate('category', 'name')
-      .sort({ 
+      .sort({
         views: -1,  // Sort by views (most viewed first)
         likes: -1   // Then by likes
       })
@@ -425,10 +446,10 @@ export const getRelatedPosts = async (req, res) => {
         { tags: { $in: post.tags } }
       ]
     })
-    .populate('author', 'username profilePic')
-    .populate('category', 'name')
-    .sort({ createdAt: -1 })
-    .limit(parseInt(limit));
+      .populate('author', 'username profilePic')
+      .populate('category', 'name')
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit));
 
     res.status(200).json({
       success: true,
