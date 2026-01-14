@@ -10,7 +10,7 @@ export const generateBlogAssistance = async (req, res) => {
       return res.status(400).json({ message: 'Type and input are required' });
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     let prompt = '';
 
@@ -73,7 +73,7 @@ export const generateBlogIdeas = async (req, res) => {
   try {
     const { category, keywords } = req.body;
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     let prompt = 'Generate 10 unique and engaging blog post ideas';
 
