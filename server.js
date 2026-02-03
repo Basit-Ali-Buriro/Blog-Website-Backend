@@ -47,7 +47,7 @@ const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    
+
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -82,8 +82,14 @@ app.get("/", (req, res) => {
   res.send("API is running...");
 });
 
-app.listen(process.env.PORT || 5000, () => {
-  console.log(
-    `Server is running on port ${process.env.PORT || 5000}`
-  );
-});
+// Only listen when running locally, not on Vercel
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(process.env.PORT || 5000, () => {
+    console.log(
+      `Server is running on port ${process.env.PORT || 5000}`
+    );
+  });
+}
+
+// Export for Vercel serverless
+export default app;
